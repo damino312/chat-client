@@ -2,14 +2,17 @@ import React, { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import { uniqBy } from "lodash";
 import axios from "axios";
+import Contact from "../component/Contact";
 
 export default function ChatPage() {
   const [ws, setWs] = useState(null);
   const [onlinePeople, setOnlinePeople] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const myId = useSelector((state) => state.user.user?.id);
+  const myLogin = useSelector((state) => state.user.user?.name);
 
   // users component
+  const [offlinePeople, setOfflinePeople] = useState({});
 
   // chat component
   const [messages, setMessages] = useState([]);
@@ -17,10 +20,20 @@ export default function ChatPage() {
   const messageContainerRef = useRef(); // для прокрутки на последнее сообщение
 
   useEffect(() => {
+    connectToWs();
+  }, []);
+
+  function connectToWs() {
     const ws = new WebSocket("ws://localhost:4000");
     setWs(ws);
     ws.addEventListener("message", handleMessage);
-  }, []);
+    ws.addEventListener("close", () => {
+      setTimeout(() => {
+        console.log("Disconnected, trying to reconnect");
+        connectToWs();
+      }, 1000);
+    });
+  }
 
   function showOnlinePeople(peopleOnline) {
     const people = {};
@@ -32,7 +45,6 @@ export default function ChatPage() {
 
   function handleMessage(ev) {
     const messageData = JSON.parse(ev.data);
-    console.log(messageData);
     if ("online" in messageData) {
       const onlinePeople = showOnlinePeople(messageData.online);
       setOnlinePeople(onlinePeople);
@@ -80,18 +92,30 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (selectedUserId) {
+      console.log(selectedUserId);
       axios.get("/messages/" + selectedUserId).then((res) => {
-        console.log(res.data);
         setMessages(res.data);
       });
     }
   }, [selectedUserId]);
 
-  const usersWithoutMe = { ...onlinePeople };
-  delete usersWithoutMe[myId];
+  useEffect(() => {
+    axios.get("/people").then((res) => {
+      const onlinePeopleIds = Object.keys(onlinePeople);
+
+      const offlinePeopleArr = res.data
+        .filter((user) => user._id !== myId)
+        .filter((user) => !onlinePeopleIds.includes(user._id));
+      const offlinePeople = {};
+      offlinePeopleArr.forEach((user) => (offlinePeople[user._id] = user.name));
+      setOfflinePeople(offlinePeople);
+    });
+  }, [onlinePeople]);
+
+  const onlineUsersWithoutMe = { ...onlinePeople };
+  delete onlineUsersWithoutMe[myId];
 
   const messagesWithoutDupes = uniqBy(messages, "_id");
-  console.log(messages);
 
   return (
     <div className=" bg-wh-bg box-border">
@@ -113,37 +137,27 @@ export default function ChatPage() {
               />
             </svg>
             <p className="font-bold text-xl">Чат РМЦ</p>
+            <p className="font-bold text-xl">{myLogin}</p>
           </div>
-          {Object.keys(usersWithoutMe).map((userId) => (
-            <div
+          {Object.keys(onlineUsersWithoutMe).map((userId) => (
+            <Contact
               key={userId}
-              className={
-                "py-4 border-b border-wh-selected flex gap-2 items-center cursor-pointer " +
-                (userId === selectedUserId ? " bg-wh-selected" : "")
-              }
-              onClick={() => setSelectedUserId(userId)}
-            >
-              <div className=" rounded-full bg-wh-dark-gray p-1 ml-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-12 h-12"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p className=" font-bold text-lg">{onlinePeople[userId]}</p>
-                <p className=" text-gray-400 text-sm  ">Message</p>
-              </div>
-            </div>
+              id={userId}
+              online={true}
+              selectedUserId={selectedUserId}
+              setSelectedUserId={setSelectedUserId}
+              username={onlineUsersWithoutMe[userId]}
+            />
+          ))}
+          {Object.keys(offlinePeople).map((userId) => (
+            <Contact
+              key={userId}
+              id={userId}
+              online={false}
+              selectedUserId={selectedUserId}
+              setSelectedUserId={setSelectedUserId}
+              username={offlinePeople[userId]}
+            />
           ))}
         </div>
         <div className="w-2/3 bg-wh-dark-gray text-white">
@@ -161,7 +175,7 @@ export default function ChatPage() {
                   {messagesWithoutDupes.map((message) => {
                     return (
                       <div
-                        key={message.messageId}
+                        key={message._id}
                         className={
                           message.sender === myId ? "text-right " : "text-left "
                         }
