@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import { uniqBy } from "lodash";
+import axios from "axios";
 
 export default function ChatPage() {
   const [ws, setWs] = useState(null);
@@ -41,7 +42,7 @@ export default function ChatPage() {
           text: messageData.text,
           sender: messageData.sender,
           recipient: messageData.recipient,
-          messageId: messageData.messageId,
+          _id: messageData.messageId,
         },
         ...prev,
       ]);
@@ -61,7 +62,7 @@ export default function ChatPage() {
     setMessages((prev) => [
       {
         text: newMessage,
-        messageId: Date.now(),
+        _id: Date.now(),
         sender: myId,
         recipient: selectedUserId,
       },
@@ -77,10 +78,19 @@ export default function ChatPage() {
     }
   }, [messages]); // Добавьте messagesWithoutDupes в зависимости
 
+  useEffect(() => {
+    if (selectedUserId) {
+      axios.get("/messages/" + selectedUserId).then((res) => {
+        console.log(res.data);
+        setMessages(res.data);
+      });
+    }
+  }, [selectedUserId]);
+
   const usersWithoutMe = { ...onlinePeople };
   delete usersWithoutMe[myId];
 
-  const messagesWithoutDupes = uniqBy(messages, "messageId");
+  const messagesWithoutDupes = uniqBy(messages, "_id");
   console.log(messages);
 
   return (
@@ -149,7 +159,6 @@ export default function ChatPage() {
                   className="flex-grow relative bg-[url('/1.png')] bg-repeat px-4 over overflow-y-auto flex flex-col-reverse"
                 >
                   {messagesWithoutDupes.map((message) => {
-                    console.log(message, myId);
                     return (
                       <div
                         key={message.messageId}
