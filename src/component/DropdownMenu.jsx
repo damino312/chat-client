@@ -6,13 +6,10 @@ import { logout } from "../feature/user/userSlice";
 
 export default function DropdownMenu({ setWs }) {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-
   async function logOut() {
     await axios.get("/logout");
     setWs();
     dispatch(logout());
-    // navigate("/");
   }
 
   function DropdownItem({ onClick, children }) {

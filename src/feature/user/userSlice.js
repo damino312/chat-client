@@ -3,9 +3,9 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const initialState = {
-  loading: true,
-  user: null,
-  error: null,
+  loading: false,
+  user: false,
+  error: false,
 };
 
 // generates pending, fulfilled and rejected action type
@@ -18,9 +18,9 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     logout: (state) => {
-      state.loading = true;
-      state.user = null;
-      state.error = null;
+      state.loading = false;
+      state.user = false;
+      state.error = true;
     },
   },
   extraReducers: (builder) => {
@@ -30,11 +30,11 @@ const userSlice = createSlice({
     builder.addCase(fetchUser.fulfilled, (state, action) => {
       state.loading = false;
       state.user = action.payload;
-      state.error = null;
+      state.error = false;
     });
     builder.addCase(fetchUser.rejected, (state, action) => {
       state.loading = false;
-      state.user = null;
+      state.user = false;
       state.error = action.error.message;
     });
   },
