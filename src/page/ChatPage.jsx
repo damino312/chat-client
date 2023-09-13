@@ -1,8 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { uniqBy } from "lodash";
 import axios from "axios";
 import Contact from "../component/Contact";
+import NavBar from "../component/NavBar";
+import NavItem from "../component/NavItem";
+import DropdownMenu from "../component/DropdownMenu";
 
 export default function ChatPage() {
   const [ws, setWs] = useState(null);
@@ -81,41 +84,45 @@ export default function ChatPage() {
       ...prev,
     ]);
   }
-
+  // Прокрутка контейнера вниз после добавления новых сообщений
   useEffect(() => {
-    // Прокрутка контейнера вниз после добавления новых сообщений
     const div = messageContainerRef.current;
     if (div) {
       div.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [messages]); // Добавьте messagesWithoutDupes в зависимости
+  }, [messages]);
 
+  // Загрузка истории сообщений выбраного юзера
   useEffect(() => {
     if (selectedUserId) {
-      console.log(selectedUserId);
       axios.get("/messages/" + selectedUserId).then((res) => {
         setMessages(res.data);
       });
     }
   }, [selectedUserId]);
 
+  // Получение юзеров оффлайн
   useEffect(() => {
-    axios.get("/people").then((res) => {
-      const onlinePeopleIds = Object.keys(onlinePeople);
-
-      const offlinePeopleArr = res.data
-        .filter((user) => user._id !== myId)
-        .filter((user) => !onlinePeopleIds.includes(user._id));
-      const offlinePeople = {};
-      offlinePeopleArr.forEach((user) => (offlinePeople[user._id] = user.name));
-      setOfflinePeople(offlinePeople);
-    });
-  }, [onlinePeople]);
+    if (myId) {
+      axios.get("/people").then((res) => {
+        const onlinePeopleIds = Object.keys(onlinePeople);
+        const offlinePeopleArr = res.data
+          .filter((user) => user._id !== myId)
+          .filter((user) => !onlinePeopleIds.includes(user._id));
+        const offlinePeople = {};
+        offlinePeopleArr.forEach(
+          (user) => (offlinePeople[user._id] = user.name)
+        );
+        setOfflinePeople(offlinePeople);
+      });
+    }
+  }, [onlinePeople, myId]);
 
   const onlineUsersWithoutMe = { ...onlinePeople };
   delete onlineUsersWithoutMe[myId];
 
   const messagesWithoutDupes = uniqBy(messages, "_id");
+  console.log("render");
 
   return (
     <div className=" bg-wh-bg box-border">
@@ -138,6 +145,33 @@ export default function ChatPage() {
             </svg>
             <p className="font-bold text-xl">Чат РМЦ</p>
             <p className="font-bold text-xl">{myLogin}</p>
+            <NavBar>
+              <NavItem
+                word={
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-6 h-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5"
+                    />
+                  </svg>
+                }
+              >
+                <DropdownMenu
+                  setWs={() => {
+                    setWs(null);
+                    console.log("change ws");
+                  }}
+                ></DropdownMenu>
+              </NavItem>
+            </NavBar>
           </div>
           {Object.keys(onlineUsersWithoutMe).map((userId) => (
             <Contact
