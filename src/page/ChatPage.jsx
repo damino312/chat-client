@@ -39,6 +39,7 @@ export default function ChatPage() {
     ws.addEventListener("message", handleMessage);
     ws.onclose = function (e) {
       if (!e.wasClean) {
+        wsRef.current = null;
         setTimeout(() => {
           console.log("Disconnected, trying to reconnect");
           connectToWs();
@@ -87,6 +88,7 @@ export default function ChatPage() {
       JSON.stringify({
         recipient: selectedUserId,
         text: newMessage,
+        _id: Date.now(),
       })
     );
     setNewMessage("");
@@ -138,7 +140,7 @@ export default function ChatPage() {
   delete onlineUsersWithoutMe[myId];
 
   const messagesWithoutDupes = uniqBy(messages, "_id");
-  console.log("render");
+  console.log(messages);
 
   return (
     <div className=" bg-wh-bg box-border">
