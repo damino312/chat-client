@@ -3,8 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { uniqBy } from "lodash";
 import axios from "axios";
 import Contact from "../component/Contact";
-import NavBar from "../component/NavBar";
-import NavItem from "../component/NavItem";
 import DropdownMenu from "../component/DropdownMenu";
 
 import { logout } from "../feature/user/userSlice";
@@ -168,28 +166,7 @@ export default function ChatPage() {
             </svg>
             <p className="font-bold text-xl">Чат РМЦ</p>
             <p className="font-bold text-xl">{myLogin}</p>
-            <NavBar>
-              <NavItem
-                word={
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-6 h-6"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5"
-                    />
-                  </svg>
-                }
-              >
-                <DropdownMenu logOut={() => logOut()}></DropdownMenu>
-              </NavItem>
-            </NavBar>
+            <DropdownMenu logOut={logOut} />
           </div>
           {Object.keys(onlineUsersWithoutMe).map((userId) => (
             <Contact
