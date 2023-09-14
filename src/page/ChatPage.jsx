@@ -146,8 +146,8 @@ export default function ChatPage() {
   const messagesWithoutDupes = uniqBy(messages, "_id");
 
   return (
-    <div className=" bg-wh-bg box-border">
-      <div className="max-w-screen-xl w-full mx-auto h-screen flex p-4">
+    <div className=" bg-wh-bg">
+      <div className="max-w-screen-xl w-full mx-auto h-screen flex p-4 box-border">
         <div className=" w-1/3 bg-wh-user text-white border-r border-wh-selected">
           <div className="flex py-6 px-4 gap-4 bg-wh-dark-gray">
             <svg
@@ -165,7 +165,7 @@ export default function ChatPage() {
               />
             </svg>
             <p className="font-bold text-xl">Чат РМЦ</p>
-            <p className="font-bold text-xl">{myLogin}</p>
+            <p className="font-bold text-xl flex-grow">{myLogin}</p>
             <DropdownMenu logOut={logOut} />
           </div>
           {Object.keys(onlineUsersWithoutMe).map((userId) => (

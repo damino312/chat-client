@@ -1,32 +1,70 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useKeyPress } from "../hooks";
 
 export default function DropdownMenu({ logOut }) {
   const [open, setOpen] = useState(false);
-  const ulRef = useRef(null);
+  const dropdownRef = useRef(null);
   const timerRef = useRef(null);
+  const btnRef = useRef(null);
+  const isEscPressed = useKeyPress("Escape");
 
+  // Выключение dropdown по нажатии на левое место на экране
   useEffect(() => {
-    ulRef.current.classList.add("hidden");
+    if (!open) return;
+
+    function handleClick(ev) {
+      console.log(dropdownRef.current.contains(ev.target));
+      if (
+        !dropdownRef.current.contains(ev.target) &&
+        !btnRef.current.contains(ev.target)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("click", handleClick);
+
+    return () => {
+      document.removeEventListener("click", handleClick);
+    };
+  }, [open]);
+
+  // Устрание анимации при первом рендеринге страницы
+  useEffect(() => {
+    dropdownRef.current.classList.add("hidden");
     return () => {
       clearTimeout(timerRef.current);
     };
   }, []);
+  // Выключение dropdown по нажатии на клавишу
+  useEffect(() => {
+    if (isEscPressed) {
+      setOpen(false);
+    }
+  }, [isEscPressed]);
 
+  // Выбран подход через функции , потому что небыло варика по условию open добавлять hidden,
+  // анимации не работали, нужна была задержка, чтобы анимация успела пройти
+
+  // Функция позволяет пройти анимации закрытия dropdown и потом только скрыть сам dropdown
+  // добавлением hidden
   function addHidden() {
     timerRef.current = setTimeout(() => {
-      ulRef.current?.classList.add("hidden");
+      dropdownRef.current?.classList.add("hidden");
     }, 290);
     return "";
   }
+
+  // Функция отображения dropdown
   function deleteHidden() {
     clearTimeout(timerRef.current);
-    ulRef.current.classList.remove("hidden");
+    dropdownRef.current.classList.remove("hidden");
     return "";
   }
 
   return (
-    <div className=" flex-grow relative">
-      <div className="flex justify-end ">
+    <div className="  relative">
+      <div className="flex justify-end " ref={btnRef}>
         <button className="" onClick={() => setOpen(!open)}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -44,9 +82,8 @@ export default function DropdownMenu({ logOut }) {
           </svg>
         </button>
       </div>
-
       <ul
-        ref={ulRef}
+        ref={dropdownRef}
         className={
           (open
             ? " animate-open " + deleteHidden()
