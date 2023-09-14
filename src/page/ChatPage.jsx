@@ -7,6 +7,8 @@ import NavBar from "../component/NavBar";
 import NavItem from "../component/NavItem";
 import DropdownMenu from "../component/DropdownMenu";
 
+import { logout } from "../feature/user/userSlice";
+
 export default function ChatPage() {
   const [ws, setWs] = useState(null);
   const [onlinePeople, setOnlinePeople] = useState([]);
@@ -14,6 +16,8 @@ export default function ChatPage() {
   const myId = useSelector((state) => state.user.user?.id);
   const myLogin = useSelector((state) => state.user.user?.name);
 
+  const dispatch = useDispatch();
+  const wsRef = useRef(null); // Чтобы избежать создание повторного ws при ререндеринг компонента
   // users component
   const [offlinePeople, setOfflinePeople] = useState({});
 
@@ -27,15 +31,26 @@ export default function ChatPage() {
   }, []);
 
   function connectToWs() {
+    if (wsRef.current != null) return; // Чтобы избежать создание повторного ws при ререндеринг компонента
+
     const ws = new WebSocket("ws://localhost:4000");
+    wsRef.current = ws;
     setWs(ws);
     ws.addEventListener("message", handleMessage);
-    ws.addEventListener("close", () => {
-      setTimeout(() => {
-        console.log("Disconnected, trying to reconnect");
-        connectToWs();
-      }, 1000);
-    });
+    ws.onclose = function (e) {
+      if (!e.wasClean) {
+        setTimeout(() => {
+          console.log("Disconnected, trying to reconnect");
+          connectToWs();
+        }, 1000);
+      }
+    };
+  }
+
+  async function logOut() {
+    await axios.get("/logout");
+    dispatch(logout());
+    ws.close();
   }
 
   function showOnlinePeople(peopleOnline) {
@@ -51,6 +66,7 @@ export default function ChatPage() {
     if ("online" in messageData) {
       const onlinePeople = showOnlinePeople(messageData.online);
       setOnlinePeople(onlinePeople);
+      console.log(onlinePeople);
     } else if ("text" in messageData) {
       setMessages((prev) => [
         {
@@ -164,12 +180,7 @@ export default function ChatPage() {
                   </svg>
                 }
               >
-                <DropdownMenu
-                  setWs={() => {
-                    setWs(null);
-                    console.log("change ws");
-                  }}
-                ></DropdownMenu>
+                <DropdownMenu logOut={() => logOut()}></DropdownMenu>
               </NavItem>
             </NavBar>
           </div>
