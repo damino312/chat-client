@@ -17,7 +17,10 @@ export default function ChatPage() {
   const myLogin = useSelector((state) => state.user.user?.name);
 
   const dispatch = useDispatch();
-  const wsRef = useRef(null); // Чтобы избежать создание повторного ws при ререндеринг компонента
+
+  // Не удается обратиться к текущим значения state'ов в ws функциях onmessage и onclose, поэтому использовал ref для передачи значений в них
+  const wsRef = useRef(null);
+  const selectedUserIdRef = useRef(null);
   // users component
   const [offlinePeople, setOfflinePeople] = useState({});
 
@@ -36,9 +39,9 @@ export default function ChatPage() {
     const ws = new WebSocket("ws://localhost:4000");
     wsRef.current = ws;
     setWs(ws);
-    ws.addEventListener("message", handleMessage);
-    ws.onclose = function (e) {
-      if (!e.wasClean) {
+    ws.onmessage = handleMessage;
+    ws.onclose = function (ev) {
+      if (!ev.wasClean) {
         wsRef.current = null;
         setTimeout(() => {
           console.log("Disconnected, trying to reconnect");
@@ -67,17 +70,19 @@ export default function ChatPage() {
     if ("online" in messageData) {
       const onlinePeople = showOnlinePeople(messageData.online);
       setOnlinePeople(onlinePeople);
-      console.log(onlinePeople);
     } else if ("text" in messageData) {
-      setMessages((prev) => [
-        {
-          text: messageData.text,
-          sender: messageData.sender,
-          recipient: messageData.recipient,
-          _id: messageData._id,
-        },
-        ...prev,
-      ]);
+      // Условие чтобы в messages записывались только сообщения из текущего открытого чата, а не из всех
+      if (messageData.sender === selectedUserIdRef.current) {
+        setMessages((prev) => [
+          {
+            text: messageData.text,
+            sender: messageData.sender,
+            recipient: messageData.recipient,
+            _id: messageData._id,
+          },
+          ...prev,
+        ]);
+      }
     }
   }
 
@@ -116,6 +121,7 @@ export default function ChatPage() {
       axios.get("/messages/" + selectedUserId).then((res) => {
         setMessages(res.data);
       });
+      selectedUserIdRef.current = selectedUserId;
     }
   }, [selectedUserId]);
 
@@ -140,7 +146,6 @@ export default function ChatPage() {
   delete onlineUsersWithoutMe[myId];
 
   const messagesWithoutDupes = uniqBy(messages, "_id");
-  console.log(messages);
 
   return (
     <div className=" bg-wh-bg box-border">
