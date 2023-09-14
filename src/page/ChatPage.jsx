@@ -74,7 +74,7 @@ export default function ChatPage() {
           text: messageData.text,
           sender: messageData.sender,
           recipient: messageData.recipient,
-          _id: messageData.messageId,
+          _id: messageData._id,
         },
         ...prev,
       ]);
