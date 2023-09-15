@@ -5,10 +5,11 @@ import axios from "axios";
 import Contact from "../component/Contact";
 import DropdownMenu from "../component/DropdownMenu";
 import moment from "moment/moment";
+import transition from "../transition";
 
 import { logout } from "../feature/user/userSlice";
 
-export default function ChatPage() {
+const ChatPage = () => {
   const [ws, setWs] = useState(null);
   const [onlinePeople, setOnlinePeople] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -291,4 +292,6 @@ export default function ChatPage() {
       </div>
     </div>
   );
-}
+};
+
+export default transition(ChatPage);

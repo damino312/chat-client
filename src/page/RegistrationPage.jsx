@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
+import transition from "../transition";
 
-export default function RegistrationPage() {
+const RegistrationPage = () => {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -21,49 +23,45 @@ export default function RegistrationPage() {
   }
 
   return (
-    <div className="flex mx-auto justify-center h-screen items-center bg-slate-400">
+    <div className="flex mx-auto justify-center h-screen items-center bg-wh-user">
       <form
         onSubmit={(ev) => handleSubmit(ev)}
-        className=" p-10 bg-white   w-full max-w-md m-2 rounded-xl"
+        className="p-10 bg-wh-dark-gray w-full max-w-sm mx-4 rounded-xl"
       >
-        <div className="flex justify-between ">
-          <div>
-            <label className="flex gap-3 mb-1" htmlFor="name">
-              <span className=" text-xl">Имя:</span>
-            </label>
-            <label className="flex gap-3 mb-1" htmlFor="login">
-              <span className=" text-xl">Логин:</span>
-            </label>
-            <label className="flex gap-3 mb-1" htmlFor="password">
-              <span className=" text-xl">Пароль:</span>
-            </label>
-          </div>
+        <div>
           <div>
             <input
-              id="name"
               type="text"
               onChange={(ev) => setName(ev.target.value)}
-              className=" border rounded-md pl-2 block mb-2"
+              className="  rounded-md  block mb-4 w-full h-10 pl-4 box-border text-white  placeholder:font-semibold font-semibold bg-wh-selected border-0 "
+              placeholder="Имя"
             />
             <input
-              id="login"
               type="text"
               onChange={(ev) => setLogin(ev.target.value)}
-              className=" border rounded-md pl-2 block mb-2"
+              className="  rounded-md  block mb-4 w-full h-10 pl-4 box-border text-white  placeholder:font-semibold font-semibold bg-wh-selected border-0 "
+              placeholder="Логин"
             />
             <input
-              id="password"
               type="password"
               onChange={(ev) => setPassword(ev.target.value)}
-              className=" border rounded-md pl-2 block mb-2"
+              className="  rounded-md  block mb-4 w-full h-10 pl-4 box-border text-white  placeholder:font-semibold font-semibold bg-wh-selected border-0 "
+              placeholder="Пароль"
             />
           </div>
         </div>
 
-        <button className="block mt-5 bg-slate-400 px-5 py-2 rounded-lg text-white hover:bg-red-800">
-          Регистрация
-        </button>
+        <div className="flex flex-col items-center">
+          <button className="block mt-5 bg-wh-my-message px-5 py-2 rounded-lg text-white  w-36 font-semibold mb-4">
+            Войти
+          </button>
+          <Link to="/" className="text-white font-semibold">
+            У меня есть аккаунт
+          </Link>
+        </div>
       </form>
     </div>
   );
-}
+};
+
+export default transition(RegistrationPage);
