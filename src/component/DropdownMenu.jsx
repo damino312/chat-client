@@ -88,7 +88,7 @@ export default function DropdownMenu({ logOut }) {
           (open
             ? " animate-open " + deleteHidden()
             : " animate-close " + addHidden()) +
-          " absolute bg-wh-selected w-24 right-0 top-8 py-2 px-8 text-center rounded-lg "
+          " absolute bg-wh-selected w-24 right-0 top-8 py-2 px-8 text-center rounded-lg border "
         }
       >
         <DropdownMenuItem>Профиль</DropdownMenuItem>
