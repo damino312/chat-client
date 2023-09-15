@@ -4,6 +4,7 @@ import { uniqBy } from "lodash";
 import axios from "axios";
 import Contact from "../component/Contact";
 import DropdownMenu from "../component/DropdownMenu";
+import moment from "moment/moment";
 
 import { logout } from "../feature/user/userSlice";
 
@@ -119,6 +120,7 @@ export default function ChatPage() {
       axios.get("/messages/" + selectedUserId).then((res) => {
         setMessages(res.data);
       });
+
       selectedUserIdRef.current = selectedUserId;
     }
   }, [selectedUserId]);
@@ -201,24 +203,55 @@ export default function ChatPage() {
                   ref={messageContainerRef}
                   className="flex-grow relative bg-[url('/1.png')] bg-repeat px-4 over overflow-y-auto flex flex-col-reverse"
                 >
-                  {messagesWithoutDupes.map((message) => {
+                  {messagesWithoutDupes.map((message, index) => {
+                    // Формат даты из монго для единого стиля
+                    const mongoFormatOfCurrentDate = moment(
+                      new Date()
+                    ).toISOString();
+
+                    const currentDate =
+                      message.createdAt?.slice(0, 10) ??
+                      mongoFormatOfCurrentDate.slice(0, 10);
+                    // Для сообщений, который были только что написаны, а не подгружены (у них нет createdAt)
+                    if (!message.createdAt) {
+                      message.createdAt = mongoFormatOfCurrentDate;
+                    }
+                    const dateOfUpperIndex = messagesWithoutDupes[
+                      index + 1
+                    ]?.createdAt.slice(0, 10);
+
+                    const currentTime = message.createdAt.slice(11, 16);
+
                     return (
-                      <div
-                        key={message._id}
-                        className={
-                          message.sender === myId ? "text-right " : "text-left "
-                        }
-                      >
-                        <p
+                      <div key={message._id}>
+                        {currentDate !== dateOfUpperIndex && (
+                          <div className=" text-center text-sm my-6">
+                            <span className=" px-2 py-1 bg-slate-600  rounded-md font-semibold">
+                              {currentDate?.replace(/-/g, "/")}
+                            </span>
+                          </div>
+                        )}
+                        <div
                           className={
-                            " inline-block px-4 py-2 rounded-lg mb-4 max-w-md break-words text-left leading-5 " +
-                            (message.sender === myId
-                              ? " bg-wh-my-message "
-                              : "bg-wh-selected ")
+                            message.sender === myId
+                              ? "text-right "
+                              : "text-left "
                           }
                         >
-                          {message.text}
-                        </p>
+                          <p
+                            className={
+                              " inline-block pl-2 pr-10 py-2 rounded-lg mb-4 max-w-md break-words text-left leading-5 relative " +
+                              (message.sender === myId
+                                ? " bg-wh-my-message "
+                                : "bg-wh-selected ")
+                            }
+                          >
+                            {message.text}
+                            <span className="absolute bottom-1 right-1 text-xs text-white">
+                              {currentTime}
+                            </span>
+                          </p>
+                        </div>
                       </div>
                     );
                   })}
