@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 
 export default function Contact({
   id,
@@ -8,7 +9,9 @@ export default function Contact({
   online,
 }) {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className={
         "py-4 border-b border-wh-selected flex gap-2 items-center cursor-pointer " +
         (id === selectedUserId ? " bg-wh-selected" : "")
@@ -43,6 +46,6 @@ export default function Contact({
           }
         ></div>
       </div>
-    </div>
+    </motion.div>
   );
 }

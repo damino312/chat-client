@@ -5,6 +5,7 @@ import axios from "axios";
 import Contact from "../component/Contact";
 import DropdownMenu from "../component/DropdownMenu";
 import moment from "moment/moment";
+import { motion } from "framer-motion";
 
 import { logout } from "../feature/user/userSlice";
 
