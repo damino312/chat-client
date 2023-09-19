@@ -11,7 +11,7 @@ import { logout } from "../feature/user/userSlice";
 
 export default function ChatPage() {
   const [ws, setWs] = useState(null);
-  const [onlinePeople, setOnlinePeople] = useState([]);
+
   const [selectedUserId, setSelectedUserId] = useState(null);
   const myId = useSelector((state) => state.user.user?.id);
   const myLogin = useSelector((state) => state.user.user?.name);
@@ -23,6 +23,9 @@ export default function ChatPage() {
   const selectedUserIdRef = useRef(null);
   // users component
   const [offlinePeople, setOfflinePeople] = useState({});
+  const [sortedOfflinePeople, setSortedOfflinePeople] = useState({});
+  const [onlinePeople, setOnlinePeople] = useState({});
+  const [sortedOnlinePeople, setsSortedOnlinePeople] = useState({});
 
   // chat component
   const [messages, setMessages] = useState([]);
@@ -69,7 +72,10 @@ export default function ChatPage() {
     const messageData = JSON.parse(ev.data);
     if ("online" in messageData) {
       const onlinePeople = showOnlinePeople(messageData.online);
-      setOnlinePeople(onlinePeople);
+      const onlineUsersWithoutMe = { ...onlinePeople };
+      delete onlineUsersWithoutMe[myId];
+      setOnlinePeople(onlineUsersWithoutMe);
+      setsSortedOnlinePeople(onlineUsersWithoutMe);
     } else if ("text" in messageData) {
       // Условие чтобы в messages записывались только сообщения из текущего открытого чата, а не из всех
       if (messageData.sender === selectedUserIdRef.current) {
@@ -107,6 +113,33 @@ export default function ChatPage() {
       ...prev,
     ]);
   }
+
+  function sortOfflineUsers(value) {
+    const offline = {};
+    for (let user in offlinePeople) {
+      const userName = offlinePeople[user]; // имя пользователя
+      const userKey = user; // ключ пользователя
+      const regexp = new RegExp(value, "gi");
+      if (userName.match(regexp)) {
+        offline[userKey] = userName;
+      }
+    }
+    setSortedOfflinePeople(offline);
+  }
+
+  function sortOnlineUsers(value) {
+    const online = {};
+    for (let user in onlinePeople) {
+      const userName = onlinePeople[user]; // имя пользователя
+      const userKey = user; // ключ пользователя
+      const regexp = new RegExp(value, "gi");
+      if (userName.match(regexp)) {
+        online[userKey] = userName;
+      }
+    }
+    setsSortedOnlinePeople(online);
+  }
+
   // Прокрутка контейнера вниз после добавления новых сообщений
   useEffect(() => {
     const div = messageContainerRef.current;
@@ -139,14 +172,14 @@ export default function ChatPage() {
           (user) => (offlinePeople[user._id] = user.name)
         );
         setOfflinePeople(offlinePeople);
+        setSortedOfflinePeople(offlinePeople);
       });
     }
   }, [onlinePeople, myId]);
 
-  const onlineUsersWithoutMe = { ...onlinePeople };
-  delete onlineUsersWithoutMe[myId];
-
   const messagesWithoutDupes = uniqBy(messages, "_id");
+
+  // console.log(onlinePeople);
 
   return (
     <div className=" bg-wh-bg">
@@ -171,24 +204,54 @@ export default function ChatPage() {
             <p className="font-bold text-xl flex-grow">{myLogin}</p>
             <DropdownMenu logOut={logOut} />
           </div>
-          {Object.keys(onlineUsersWithoutMe).map((userId) => (
+          <div className="h-8 relative  ">
+            <input
+              type="text"
+              className="h-full w-full block text-black pl-2 pr-8 box-border"
+              onChange={(ev) => {
+                sortOfflineUsers(ev.target.value);
+                sortOnlineUsers(ev.target.value);
+              }}
+            />
+            <motion.button
+              className=" absolute top-1 right-1"
+              whileHover={{ scale: 1.2 }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg "
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-6 h-6 text-black"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                />
+              </svg>
+            </motion.button>
+          </div>
+
+          {Object.keys(sortedOnlinePeople).map((userId) => (
             <Contact
               key={userId}
               id={userId}
               online={true}
               selectedUserId={selectedUserId}
               setSelectedUserId={setSelectedUserId}
-              username={onlineUsersWithoutMe[userId]}
+              username={sortedOnlinePeople[userId]}
             />
           ))}
-          {Object.keys(offlinePeople).map((userId) => (
+          {Object.keys(sortedOfflinePeople).map((userId) => (
             <Contact
               key={userId}
               id={userId}
               online={false}
               selectedUserId={selectedUserId}
               setSelectedUserId={setSelectedUserId}
-              username={offlinePeople[userId]}
+              username={sortedOfflinePeople[userId]}
             />
           ))}
         </div>

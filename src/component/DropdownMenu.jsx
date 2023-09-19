@@ -63,7 +63,7 @@ export default function DropdownMenu({ logOut }) {
   }
 
   return (
-    <div className="  relative">
+    <div className="  relative z-10">
       <div className="flex justify-end " ref={btnRef}>
         <button className="" onClick={() => setOpen(!open)}>
           <svg
