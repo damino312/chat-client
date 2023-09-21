@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { uniqBy } from "lodash";
+import { last, uniqBy } from "lodash";
 import axios from "axios";
 import Contact from "../component/Contact";
 import DropdownMenu from "../component/DropdownMenu";
@@ -11,21 +11,22 @@ import { logout } from "../feature/user/userSlice";
 
 export default function ChatPage() {
   const [ws, setWs] = useState(null);
-
   const [selectedUserId, setSelectedUserId] = useState(null);
   const myId = useSelector((state) => state.user.user?.id);
   const myLogin = useSelector((state) => state.user.user?.name);
-
   const dispatch = useDispatch();
 
   // Не удается обратиться к текущим значения state'ов в ws функциях onmessage и onclose, поэтому использовал ref для передачи значений в них
   const wsRef = useRef(null);
   const selectedUserIdRef = useRef(null);
+
   // users component
   const [offlinePeople, setOfflinePeople] = useState({});
   const [sortedOfflinePeople, setSortedOfflinePeople] = useState({});
   const [onlinePeople, setOnlinePeople] = useState({});
   const [sortedOnlinePeople, setsSortedOnlinePeople] = useState({});
+  const [lastMessages, setLastMessages] = useState({});
+  const lastMessagesRef = useRef(null);
 
   // chat component
   const [messages, setMessages] = useState([]);
@@ -67,6 +68,9 @@ export default function ChatPage() {
     });
     return people;
   }
+  useEffect(() => {
+    lastMessagesRef.current = lastMessages;
+  }, [lastMessages]);
 
   function handleMessage(ev) {
     const messageData = JSON.parse(ev.data);
@@ -78,6 +82,17 @@ export default function ChatPage() {
       setsSortedOnlinePeople(onlineUsersWithoutMe);
     } else if ("text" in messageData) {
       // Условие чтобы в messages записывались только сообщения из текущего открытого чата, а не из всех
+
+      const messages1 = lastMessagesRef.current;
+      messages1[messageData.sender] = {
+        text: messageData.text,
+        owner: false,
+      };
+
+      setLastMessages((prev) => {
+        return { ...prev, ...messages1 };
+      });
+
       if (messageData.sender === selectedUserIdRef.current) {
         setMessages((prev) => [
           {
@@ -90,6 +105,12 @@ export default function ChatPage() {
         ]);
       }
     }
+  }
+
+  function setLastestMessages(userId, text, owner) {
+    const messages = lastMessages;
+    messages[userId] = { text: text, owner: owner };
+    lastMessagesRef.current = messages;
   }
 
   function sendMessage(ev) {
@@ -112,6 +133,7 @@ export default function ChatPage() {
       },
       ...prev,
     ]);
+    setLastestMessages(selectedUserId, newMessage, true);
   }
 
   function sortOfflineUsers(value) {
@@ -177,9 +199,16 @@ export default function ChatPage() {
     }
   }, [onlinePeople, myId]);
 
-  const messagesWithoutDupes = uniqBy(messages, "_id");
+  // Получение последних сообщений каждого юзера
+  useEffect(() => {
+    axios.post("/getlastmessages", { data: "lol" }).then((res) => {
+      // -_- Заменить пост на гет
+      setLastMessages(res.data);
+      lastMessagesRef.current = res.data;
+    });
+  }, []);
 
-  // console.log(onlinePeople);
+  const messagesWithoutDupes = uniqBy(messages, "_id");
 
   return (
     <div className=" bg-wh-bg">
@@ -242,6 +271,7 @@ export default function ChatPage() {
               selectedUserId={selectedUserId}
               setSelectedUserId={setSelectedUserId}
               username={sortedOnlinePeople[userId]}
+              lastMessages={lastMessages}
             />
           ))}
           {Object.keys(sortedOfflinePeople).map((userId) => (
@@ -252,6 +282,7 @@ export default function ChatPage() {
               selectedUserId={selectedUserId}
               setSelectedUserId={setSelectedUserId}
               username={sortedOfflinePeople[userId]}
+              lastMessages={lastMessages}
             />
           ))}
         </div>

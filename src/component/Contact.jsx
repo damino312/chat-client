@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
 
 export default function Contact({
@@ -7,7 +8,11 @@ export default function Contact({
   setSelectedUserId,
   username,
   online,
+  lastMessages,
 }) {
+  const myId = useSelector((state) => state.user.user?.id);
+  const data = lastMessages?.[id] ?? lastMessages?.[myId];
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -36,7 +41,10 @@ export default function Contact({
       </div>
       <div>
         <p className=" font-bold text-lg">{username}</p>
-        <p className=" text-gray-400 text-sm  ">Message</p>
+        <p className=" text-gray-400 text-sm  ">
+          <span className="text-white">{data?.owner ? "Вы:" : ""}</span>{" "}
+          {data?.text}
+        </p>
       </div>
       <div className="flex-grow flex justify-end ">
         <div
