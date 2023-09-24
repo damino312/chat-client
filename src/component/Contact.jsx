@@ -12,6 +12,7 @@ export default function Contact({
 }) {
   const myId = useSelector((state) => state.user.user?.id);
   const data = lastMessages?.[id] ?? lastMessages?.[myId];
+  console.log(data);
 
   return (
     <motion.div
@@ -43,7 +44,7 @@ export default function Contact({
         <p className=" font-bold text-lg">{username}</p>
         <p className=" text-gray-400 text-sm  ">
           <span className="text-white">{data?.owner ? "Вы:" : ""}</span>{" "}
-          {data?.text}
+          {data?.file?.fileName ?? data?.text}
         </p>
       </div>
       <div className="flex-grow flex justify-end ">

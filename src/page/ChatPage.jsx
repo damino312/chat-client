@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { last, uniqBy } from "lodash";
+import { uniqBy } from "lodash";
 import axios from "axios";
 import Contact from "../component/Contact";
 import DropdownMenu from "../component/DropdownMenu";
 import moment from "moment/moment";
 import { motion } from "framer-motion";
+import { LINK } from "../config/config";
 
 import { logout } from "../feature/user/userSlice";
 
@@ -36,131 +37,6 @@ export default function ChatPage() {
   useEffect(() => {
     connectToWs();
   }, []);
-
-  function connectToWs() {
-    if (wsRef.current != null) return; // Чтобы избежать создание повторного ws при ререндеринг компонента
-
-    const ws = new WebSocket("ws://localhost:4000");
-    wsRef.current = ws;
-    setWs(ws);
-    ws.onmessage = handleMessage;
-    ws.onclose = function (ev) {
-      if (!ev.wasClean) {
-        wsRef.current = null;
-        setTimeout(() => {
-          console.log("Disconnected, trying to reconnect");
-          connectToWs();
-        }, 1000);
-      }
-    };
-  }
-
-  async function logOut() {
-    await axios.get("/logout");
-    dispatch(logout());
-    ws.close();
-  }
-
-  function showOnlinePeople(peopleOnline) {
-    const people = {};
-    peopleOnline.forEach(({ userId, username }) => {
-      people[userId] = username;
-    });
-    return people;
-  }
-  useEffect(() => {
-    lastMessagesRef.current = lastMessages;
-  }, [lastMessages]);
-
-  function handleMessage(ev) {
-    const messageData = JSON.parse(ev.data);
-    if ("online" in messageData) {
-      const onlinePeople = showOnlinePeople(messageData.online);
-      const onlineUsersWithoutMe = { ...onlinePeople };
-      delete onlineUsersWithoutMe[myId];
-      setOnlinePeople(onlineUsersWithoutMe);
-      setsSortedOnlinePeople(onlineUsersWithoutMe);
-    } else if ("text" in messageData) {
-      // Условие чтобы в messages записывались только сообщения из текущего открытого чата, а не из всех
-
-      const messages1 = lastMessagesRef.current;
-      messages1[messageData.sender] = {
-        text: messageData.text,
-        owner: false,
-      };
-
-      setLastMessages((prev) => {
-        return { ...prev, ...messages1 };
-      });
-
-      if (messageData.sender === selectedUserIdRef.current) {
-        setMessages((prev) => [
-          {
-            text: messageData.text,
-            sender: messageData.sender,
-            recipient: messageData.recipient,
-            _id: messageData._id,
-          },
-          ...prev,
-        ]);
-      }
-    }
-  }
-
-  function setLastestMessages(userId, text, owner) {
-    const messages = lastMessages;
-    messages[userId] = { text: text, owner: owner };
-    lastMessagesRef.current = messages;
-  }
-
-  function sendMessage(ev) {
-    ev.preventDefault();
-    if (newMessage === "") return; // надо доработать и написать чтобы, если только пробелы, то не отправлять
-    ws.send(
-      JSON.stringify({
-        recipient: selectedUserId,
-        text: newMessage,
-        _id: Date.now(),
-      })
-    );
-    setNewMessage("");
-    setMessages((prev) => [
-      {
-        text: newMessage,
-        _id: Date.now(),
-        sender: myId,
-        recipient: selectedUserId,
-      },
-      ...prev,
-    ]);
-    setLastestMessages(selectedUserId, newMessage, true);
-  }
-
-  function sortOfflineUsers(value) {
-    const offline = {};
-    for (let user in offlinePeople) {
-      const userName = offlinePeople[user]; // имя пользователя
-      const userKey = user; // ключ пользователя
-      const regexp = new RegExp(value, "gi");
-      if (userName.match(regexp)) {
-        offline[userKey] = userName;
-      }
-    }
-    setSortedOfflinePeople(offline);
-  }
-
-  function sortOnlineUsers(value) {
-    const online = {};
-    for (let user in onlinePeople) {
-      const userName = onlinePeople[user]; // имя пользователя
-      const userKey = user; // ключ пользователя
-      const regexp = new RegExp(value, "gi");
-      if (userName.match(regexp)) {
-        online[userKey] = userName;
-      }
-    }
-    setsSortedOnlinePeople(online);
-  }
 
   // Прокрутка контейнера вниз после добавления новых сообщений
   useEffect(() => {
@@ -207,6 +83,167 @@ export default function ChatPage() {
       lastMessagesRef.current = res.data;
     });
   }, []);
+
+  // Т.к. handleMessage не видит текущие состояния state'ов, приходится использовать ref и помещать его в handleMessage. Чтобы держать актуальное значение lastMessages в ref используется этот useEffect
+  useEffect(() => {
+    lastMessagesRef.current = lastMessages;
+  }, [lastMessages]);
+
+  function connectToWs() {
+    if (wsRef.current != null) return; // Чтобы избежать создание повторного ws при ререндеринг компонента
+
+    const ws = new WebSocket("ws://localhost:4000");
+    wsRef.current = ws;
+    setWs(ws);
+    ws.onmessage = handleMessage;
+    ws.onclose = function (ev) {
+      if (!ev.wasClean) {
+        wsRef.current = null;
+        setTimeout(() => {
+          console.log("Disconnected, trying to reconnect");
+          connectToWs();
+        }, 1000);
+      }
+    };
+  }
+
+  async function logOut() {
+    await axios.get("/logout");
+    dispatch(logout());
+    ws.close();
+  }
+
+  function showOnlinePeople(peopleOnline) {
+    const people = {};
+    peopleOnline.forEach(({ userId, username }) => {
+      people[userId] = username;
+    });
+    return people;
+  }
+
+  function handleMessage(ev) {
+    const messageData = JSON.parse(ev.data);
+    if ("online" in messageData) {
+      const onlinePeople = showOnlinePeople(messageData.online);
+      const onlineUsersWithoutMe = { ...onlinePeople };
+      delete onlineUsersWithoutMe[myId];
+      setOnlinePeople(onlineUsersWithoutMe);
+      setsSortedOnlinePeople(onlineUsersWithoutMe);
+    } else if ("text" in messageData) {
+      // Условие чтобы в messages записывались только сообщения из текущего открытого чата, а не из всех
+      const messages1 = lastMessagesRef.current;
+      messages1[messageData.sender] = {
+        text: messageData.text,
+        owner: false,
+        file: messageData.file,
+      };
+      setLastMessages((prev) => {
+        return { ...prev, ...messages1 };
+      });
+
+      if (messageData.sender === selectedUserIdRef.current) {
+        setMessages((prev) => [
+          {
+            text: messageData.text,
+            sender: messageData.sender,
+            recipient: messageData.recipient,
+            _id: messageData._id,
+            file: messageData.file,
+          },
+          ...prev,
+        ]);
+      }
+    }
+  }
+
+  function setLastestMessages(userId, text, owner, file) {
+    const messages = lastMessages;
+    messages[userId] = {
+      text: text,
+      owner: owner,
+      file: { fileName: file },
+    };
+    lastMessagesRef.current = messages;
+  }
+
+  async function sendMessage(ev, file = null) {
+    if (ev) ev.preventDefault();
+    if (newMessage === "" && file === null) {
+      return;
+    } // надо доработать и написать чтобы, если только пробелы, то не отправлять
+
+    if (file) {
+      ws.send(
+        JSON.stringify({
+          recipient: selectedUserId,
+          text: "",
+          _id: Date.now(), // надо ли это поле?
+          file,
+        })
+      );
+      const { data } = await axios.get("/messages/" + selectedUserId);
+      setMessages(data);
+    } else if (newMessage) {
+      ws.send(
+        JSON.stringify({
+          recipient: selectedUserId,
+          text: newMessage,
+          _id: Date.now(), // надо ли это поле?
+          file: null, // нужно ли указывать это если в модели по дефолту стоит null?
+        })
+      );
+      setNewMessage("");
+      setMessages((prev) => [
+        {
+          text: newMessage,
+          _id: Date.now(),
+          sender: myId,
+          recipient: selectedUserId,
+          file: null,
+        },
+        ...prev,
+      ]);
+    }
+    console.log(file);
+    setLastestMessages(selectedUserId, newMessage, true, file?.info);
+  }
+
+  function sendFile(ev) {
+    const reader = new FileReader();
+    reader.readAsDataURL(ev.target.files[0]);
+    reader.onload = () => {
+      sendMessage(null, {
+        info: ev.target.files[0].name,
+        data: reader.result,
+      });
+    };
+  }
+
+  function sortOfflineUsers(value) {
+    const offline = {};
+    for (let user in offlinePeople) {
+      const userName = offlinePeople[user]; // имя пользователя
+      const userKey = user; // ключ пользователя
+      const regexp = new RegExp(value, "gi");
+      if (userName.match(regexp)) {
+        offline[userKey] = userName;
+      }
+    }
+    setSortedOfflinePeople(offline);
+  }
+
+  function sortOnlineUsers(value) {
+    const online = {};
+    for (let user in onlinePeople) {
+      const userName = onlinePeople[user]; // имя пользователя
+      const userKey = user; // ключ пользователя
+      const regexp = new RegExp(value, "gi");
+      if (userName.match(regexp)) {
+        online[userKey] = userName;
+      }
+    }
+    setsSortedOnlinePeople(online);
+  }
 
   const messagesWithoutDupes = uniqBy(messages, "_id");
 
@@ -341,7 +378,19 @@ export default function ChatPage() {
                                 : "bg-wh-selected ")
                             }
                           >
-                            {message.text}
+                            {message.file ? (
+                              <a
+                                href={
+                                  LINK + "/uploads/" + message.file.filePath
+                                }
+                                className=" underline
+                              "
+                              >
+                                {message.file.fileName}
+                              </a>
+                            ) : (
+                              message.text
+                            )}
                             <span className="absolute bottom-1 right-1 text-xs text-white">
                               {currentTime}
                             </span>
@@ -352,16 +401,37 @@ export default function ChatPage() {
                   })}
                 </div>
                 <form
-                  className="h-20 flex py-4 box-border bg-wh-dark-gray "
+                  className="flex py-4 box-border bg-wh-dark-gray"
                   onSubmit={sendMessage}
                 >
                   <input
                     type="text"
-                    className="mx-4 flex-grow rounded-md pl-4 bg-wh-selected  "
+                    className="mx-4 flex-grow rounded-md pl-4 bg-wh-selected"
                     value={newMessage}
                     onChange={(ev) => setNewMessage(ev.target.value)}
                   />
-                  <button className=" w-12 bg-wh-selected text-white block mr-4 flex-shrink rounded-md ">
+                  <label className=" h-12 w-12 bg-wh-selected text-white flex justify-center items-center mr-4 flex-shrink rounded-md cursor-pointer">
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={(ev) => sendFile(ev)}
+                    />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-8 h-8 m-0"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"
+                      />
+                    </svg>
+                  </label>
+                  <button className=" h-12 w-12 bg-wh-selected text-white block mr-4 flex-shrink rounded-md ">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
