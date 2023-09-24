@@ -12,7 +12,7 @@ export default function Contact({
 }) {
   const myId = useSelector((state) => state.user.user?.id);
   const data = lastMessages?.[id] ?? lastMessages?.[myId];
-  console.log(data);
+  // console.log(data);
 
   return (
     <motion.div

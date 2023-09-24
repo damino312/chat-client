@@ -140,6 +140,7 @@ export default function ChatPage() {
       setLastMessages((prev) => {
         return { ...prev, ...messages1 };
       });
+      console.log(messageData);
 
       if (messageData.sender === selectedUserIdRef.current) {
         setMessages((prev) => [
@@ -181,8 +182,17 @@ export default function ChatPage() {
           file,
         })
       );
-      const { data } = await axios.get("/messages/" + selectedUserId);
-      setMessages(data);
+
+      setMessages((prev) => [
+        {
+          text: newMessage,
+          _id: Date.now(),
+          sender: myId,
+          recipient: selectedUserId,
+          file: file,
+        },
+        ...prev,
+      ]);
     } else if (newMessage) {
       ws.send(
         JSON.stringify({
@@ -204,7 +214,6 @@ export default function ChatPage() {
         ...prev,
       ]);
     }
-    console.log(file);
     setLastestMessages(selectedUserId, newMessage, true, file?.info);
   }
 
@@ -216,6 +225,7 @@ export default function ChatPage() {
         info: ev.target.files[0].name,
         data: reader.result,
       });
+      ev.target.value = null;
     };
   }
 
@@ -386,7 +396,7 @@ export default function ChatPage() {
                                 className=" underline
                               "
                               >
-                                {message.file.fileName}
+                                {message.file.fileName ?? message.file.info}
                               </a>
                             ) : (
                               message.text
