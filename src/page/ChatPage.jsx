@@ -140,8 +140,6 @@ export default function ChatPage() {
       setLastMessages((prev) => {
         return { ...prev, ...messages1 };
       });
-      console.log(messageData);
-
       if (messageData.sender === selectedUserIdRef.current) {
         setMessages((prev) => [
           {
@@ -182,17 +180,23 @@ export default function ChatPage() {
           file,
         })
       );
-
-      setMessages((prev) => [
-        {
-          text: newMessage,
-          _id: Date.now(),
-          sender: myId,
-          recipient: selectedUserId,
-          file: file,
-        },
-        ...prev,
-      ]);
+      setTimeout(
+        () =>
+          axios.post("/getlastmessages").then((res) => {
+            console.log(res.data[selectedUserId]);
+            setMessages((prev) => [
+              {
+                text: newMessage,
+                _id: Date.now(),
+                sender: myId,
+                recipient: selectedUserId,
+                file: res.data[selectedUserId].file,
+              },
+              ...prev,
+            ]);
+          }),
+        1000
+      ); // Задержка 1 сек, чтобы файл успел получить переконвертированное название, добавиться в бд. Это необходимо чтобы юзер который отправил, мог открыть файл без перегрузки страницы
     } else if (newMessage) {
       ws.send(
         JSON.stringify({
