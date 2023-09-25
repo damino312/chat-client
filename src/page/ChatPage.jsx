@@ -397,6 +397,7 @@ export default function ChatPage() {
                                 href={
                                   LINK + "/uploads/" + message.file.filePath
                                 }
+                                target="_blank"
                                 className=" underline
                               "
                               >
