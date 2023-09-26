@@ -13,7 +13,6 @@ export default function DropdownMenu({ logOut }) {
     if (!open) return;
 
     function handleClick(ev) {
-      console.log(dropdownRef.current.contains(ev.target));
       if (
         !dropdownRef.current.contains(ev.target) &&
         !btnRef.current.contains(ev.target)
@@ -63,7 +62,7 @@ export default function DropdownMenu({ logOut }) {
   }
 
   return (
-    <div className="  relative z-10">
+    <div className="  relative z-10 flex-1">
       <div className="flex justify-end " ref={btnRef}>
         <button className="" onClick={() => setOpen(!open)}>
           <svg
@@ -91,7 +90,6 @@ export default function DropdownMenu({ logOut }) {
           " absolute bg-wh-selected w-24 right-0 top-8 py-2 px-8 text-center rounded-lg border "
         }
       >
-        <DropdownMenuItem>Профиль</DropdownMenuItem>
         <DropdownMenuItem onClick={() => logOut()}>Выйти</DropdownMenuItem>
       </ul>
     </div>

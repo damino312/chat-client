@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
 
@@ -12,7 +12,6 @@ export default function Contact({
 }) {
   const myId = useSelector((state) => state.user.user?.id);
   const data = lastMessages?.[id] ?? lastMessages?.[myId];
-  // console.log(data);
 
   return (
     <motion.div

@@ -20,15 +20,11 @@ export default function Login() {
     try {
       await axios.post("/login", { login, password });
       dispatch(fetchUser());
-      console.log("LoginPage.jsx: Залогинился");
       setRedirect(true);
-    } catch (er) {
-      console.log(er.response.data);
-    }
+    } catch (er) {}
   }
 
   if (redirect || Boolean(user)) {
-    console.log("Redirect ", redirect, Boolean(user));
     return <Navigate to="/chat" replace={true} />;
   }
 
