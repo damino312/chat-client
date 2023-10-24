@@ -13,7 +13,6 @@ export default function ChatPage() {
   const [ws, setWs] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const myId = useSelector((state) => state.user.user?.id);
-  const myLogin = useSelector((state) => state.user.user?.name);
   const dispatch = useDispatch();
 
   // Не удается обратиться к текущим значения state'ов в ws функциях onmessage и onclose, поэтому использовал ref для передачи значений в них
@@ -262,7 +261,7 @@ export default function ChatPage() {
   return (
     <div className=" bg-wh-bg">
       <div className="max-w-screen-xl w-full mx-auto h-screen flex p-4 box-border">
-        <div className=" w-1/3 bg-wh-user text-white border-r border-wh-selected">
+        <div className=" w-1/3 bg-wh-user text-white border-r border-wh-selected overflow-y-auto">
           <div className="flex py-6 px-4 gap-4 bg-wh-dark-gray">
             <svg
               xmlns="http://www.w3.org/2000/svg"
